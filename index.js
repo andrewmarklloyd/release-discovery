@@ -46,7 +46,7 @@ function refreshAllTokens() {
       const keys = Object.keys(data)
       var info
       keys.forEach(k => {
-        info = JSON.parse(data[k])
+        let info = JSON.parse(data[k])
         spotifyClient.refreshAccessToken(info.refresh_token)
           .then(token => {
             info.access_token = token.body.access_token
@@ -54,19 +54,6 @@ function refreshAllTokens() {
             herokuClient.updateConfigVars(info.userId, tokenString)
           })
       })
-    })
-}
-
-function refreshSingleToken(userId) {
-  herokuClient.getConfigVar(userId)
-    .then(data => {
-      info = JSON.parse(data)
-      spotifyClient.refreshAccessToken(info.refresh_token)
-        .then(token => {
-          info.access_token = token.body.access_token
-          tokenString = JSON.stringify(info)
-          herokuClient.updateConfigVars(info.userId, tokenString)
-        })
     })
 }
 
