@@ -11,6 +11,10 @@ function startServer() {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.get('/', (req, res) => {
+    res.send('<h1>Click below to register</h1><form action="/register"><input type="submit" value="Register"/></form>')
+  });
+
+  app.get('/register', (req, res) => {
     res.redirect(spotifyClient.getAuthUrl('register'))
   });
 
