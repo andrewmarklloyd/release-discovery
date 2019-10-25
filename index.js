@@ -21,8 +21,16 @@ function startServer() {
   app.get('/callback', (req, res) => {
     spotifyClient.exchangeAccessCodeForTokens(req.query.code)
       .then(result => {
-        herokuClient.updateConfigVars(result.body.userId, JSON.stringify(result.body))
-        res.redirect('/home');
+        createPlaylist(result.body)
+          .then(playlistId => {
+            result.body.playlistId = playlistId
+            herokuClient.updateConfigVars(result.body.userId, JSON.stringify(result.body))
+            res.redirect('/home');
+          })
+          .catch(err => {
+            console.log(err)
+            res.redirect('/home');
+          })
       })
       .catch(err => {
         console.log(err)
@@ -40,7 +48,6 @@ function startServer() {
 }
 
 function refreshAllTokens() {
-  // TODO loop isn't setting the access token properly
   herokuClient.getAllConfigVars()
     .then(data => {
       const keys = Object.keys(data)
@@ -61,29 +68,27 @@ function updatePlaylist() {
   herokuClient.getAllConfigVars()
     .then(data => {
       const keys = Object.keys(data)
-      var info
       keys.forEach(k => {
-        info = JSON.parse(data[k])
-        // TODO: store playlist id in heroku config so we don't loop through every time.
-        spotifyClient.getPlaylistIds(info.userId, info.access_token, (err, data) => {
-          if (err) {
-            console.log(err);
-          } else {
-            if (data.releaseDiscovery) {
-              console.log(data);
-            } else {
-              spotifyClient.createAggregatePlaylist(data.userId, data.accessToken)
-              .then(playlist => {
-                console.log(playlist);
-              })
-              .catch(err => {
-                console.log(err)
-              })
-            }
-          }
-        })
+        let info = JSON.parse(data[k])
+        console.log(info.playlistId)
       })
     })
+}
+
+function createPlaylist(info) {
+  return new Promise((resolve, reject) => {
+    spotifyClient.getPlaylistIds(info.userId, info.access_token, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (data.releaseDiscovery) {
+          resolve(data.releaseDiscovery);
+        } else {
+          return spotifyClient.createAggregatePlaylist(data.userId, data.accessToken)
+        }
+      }
+    })
+  })
 }
 
 
