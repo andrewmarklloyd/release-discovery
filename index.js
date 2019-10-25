@@ -36,6 +36,7 @@ function startServer() {
 }
 
 function refreshAllTokens() {
+  // TODO loop isn't setting the access token properly
   herokuClient.getAllConfigVars()
     .then(data => {
       const keys = Object.keys(data)
@@ -52,8 +53,46 @@ function refreshAllTokens() {
     })
 }
 
+function refreshSingleToken(userId) {
+  herokuClient.getConfigVar(userId)
+    .then(data => {
+      info = JSON.parse(data)
+      spotifyClient.refreshAccessToken(info.refresh_token)
+        .then(token => {
+          info.access_token = token.body.access_token
+          tokenString = JSON.stringify(info)
+          herokuClient.updateConfigVars(info.userId, tokenString)
+        })
+    })
+}
+
 function updatePlaylist() {
-  console.log('updating playlist')
+  herokuClient.getAllConfigVars()
+    .then(data => {
+      const keys = Object.keys(data)
+      var info
+      keys.forEach(k => {
+        info = JSON.parse(data[k])
+        // TODO: store playlist id in heroku config so we don't loop through every time.
+        spotifyClient.getPlaylistIds(info.userId, info.access_token, (err, data) => {
+          if (err) {
+            console.log(err);
+          } else {
+            if (data.releaseDiscovery) {
+              console.log(data);
+            } else {
+              spotifyClient.createAggregatePlaylist(data.userId, data.accessToken)
+              .then(playlist => {
+                console.log(playlist);
+              })
+              .catch(err => {
+                console.log(err)
+              })
+            }
+          }
+        })
+      })
+    })
 }
 
 
