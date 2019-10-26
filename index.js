@@ -65,14 +65,32 @@ function refreshAllTokens() {
 }
 
 function updatePlaylist() {
-  herokuClient.getAllConfigVars()
+  herokuClient.getConfigVar('andrewlloyd85')
     .then(data => {
-      const keys = Object.keys(data)
-      keys.forEach(k => {
-        let info = JSON.parse(data[k])
-        console.log(info.playlistId)
-      })
+      let userInfo = JSON.parse(data)
+      let access_token = userInfo.accessToken //access_token ?
+      let userId = userInfo.userId
+      let playlistId = userInfo.playlistId
+
+      spotifyClient.getPlaylistTrackIds(access_token, userId, playlistId)
+        .then(releaseDiscoveryTrackIds => {
+          return spotifyClient.subsetOfMySavedTracks(access_token, releaseDiscoveryTrackIds)
+        })
+        .then(subsetOfMySavedTracks => {
+          return spotifyClient.subsetOfPlaylistId(access_token, userId, subsetOfMySavedTracks, playlistId)
+        })
+        .then(newTracksToAdd => {
+          spotifyApi.addTracksToPlaylist(access_token)
+        })
     })
+  // herokuClient.getAllConfigVars()
+  //   .then(data => {
+  //     const keys = Object.keys(data)
+  //     keys.forEach(k => {
+  //       let info = JSON.parse(data[k])
+  //       console.log(info.playlistId)
+  //     })
+  //   })
 }
 
 function createPlaylist(info) {

@@ -50,13 +50,13 @@ function refreshAccessToken(refreshToken) {
   })
 }
 
-function getPlaylistIds(userId, accessToken, callback, result, options) {
+function getPlaylistIds(userId, access_token, callback, result, options) {
   var options = options ? options : {limit: 50, offset: 0}
-  var result = result ? result : {accessToken, userId}
-  _privateGetPlaylistIds(accessToken, options, result).then(result => {
+  var result = result ? result : {access_token, userId}
+  _privateGetPlaylistIds(access_token, options, result).then(result => {
     if (result.next && !result.releaseRadar && !result.spotifydiscover) {
       options.offset += 10;
-      getPlaylistIds(null, accessToken, callback, result, options)
+      getPlaylistIds(null, access_token, callback, result, options)
     } else {
       callback(null, result)
     }
@@ -65,9 +65,9 @@ function getPlaylistIds(userId, accessToken, callback, result, options) {
   })
 }
 
-function _privateGetPlaylistIds(accessToken, options, result) {
+function _privateGetPlaylistIds(access_token, options, result) {
   return new Promise((resolve, reject) => {
-    spotifyApi.setAccessToken(accessToken);
+    spotifyApi.setAccessToken(access_token);
     spotifyApi.getUserPlaylists(0, options)
     .then(data => {
       for (var d in data.body.items) {
@@ -96,112 +96,83 @@ function _privateGetPlaylistIds(accessToken, options, result) {
   })
 }
 
-function createAggregatePlaylist(userId, accessToken) {
-  spotifyApi.setAccessToken(accessToken);
+function createAggregatePlaylist(userId, access_token) {
+  spotifyApi.setAccessToken(access_token);
   return spotifyApi.createPlaylist(userId, 'Release Discovery', { 'public' : false });
 }
 
-// function containsMySavedTracks(list) {
-//   spotifyApi.containsMySavedTracks(list)
-//     .then(function(data) {
-//
-//       // An array is returned, where the first element corresponds to the first track ID in the query
-//       //console.log(data.body);
-//       var trackIsInYourMusic = data.body[0];
-//
-//       if (trackIsInYourMusic) {
-//         console.log('Track was found in the user\'s Your Music library');
-//       } else {
-//         console.log('Track was not found.');
-//       }
-//   }, function(err) {
-//     console.log('Something went wrong!', err);
-//   });
-// }
+// given access_token, userId, and playlistId, returns list of trackIds for the given playlistId
+function getPlaylistTrackIds(access_token, userId, playlistId) {
+  spotifyApi.setAccessToken(access_token)
+  return spotifyApi.getPlaylist(playlistId)
+  .then(function(data) {
+    let list = []
+    data.body.tracks.items.map(function(item) {
+      if (item.track) {
+        list.push(item.track.id)
+      }
+    })
+    return Promise.resolve(list);
+  })
+}
 
-// function getMySavedTracks() {
-//   spotifyApi.getMySavedTracks().then(function(data) {
-//     console.log('Done!', data);
-//   }, function(err) {
-//     console.log('Something went wrong!', err);
-//   });
-// }
+// given access_token and listOfTrackIds, returns a subset of tracks contained in my saved tracks
+function subsetOfMySavedTracks(access_token, listOfTrackIds) {
+  spotifyApi.setAccessToken(access_token)
+  var items = list;
+  return spotifyApi.containsMySavedTracks(list)
+    .then(data => {
+      let subsetInMyTracks = []
+      for (var i in data.body) {
+        if (data.body[i]) {
+          subsetInMyTracks.push(items[i])
+        }
+      }
+      return Promise.resolve(subsetInMyTracks)
+    })
+}
 
-// function addTracksToPlaylist(playlist, tracks) {
-//   spotifyApi.addTracksToPlaylist(spotify_ids.user.me, playlist, tracks)
-//   .then(function(data) {
-//
-//   }, function(err) {
-//     console.log('Error adding tracks to playlist:', err);
-//   });
-// }
+// given access_token, userId, candidateTrackIds, and playlistId, returns a subset of tracks that are NOT already in playlistId
+function subsetOfPlaylistId(access_token, userId, candidateTrackIds, playlistId) {
+  spotifyApi.setAccessToken(access_token)
+  let subsetNotInPlaylist = [];
+  return spotifyApi.getPlaylistTracks(userId, playlistId, {limit: 100, offset: 0})
+    .then(data => {
+      subsetNotInPlaylist = subsetNotInPlaylist.concat(data.body.items);
+      var promises = [];
+      var calls = Math.ceil(data.body.total / 100)
+      for (var i = 1; i < calls; i++) {
+        var promise = new Promise((resolve, reject) => {
+          spotifyApi.getPlaylistTracks(userId, playlistId, {limit: 100, offset: i * 100})
+          .then(function(data){
+            resolve(data.body.items);
+          });
+        });
+        promises.push(promise);
+      }
+      Promise.all(promises).then(values => {
+        values.forEach(function(item) {
+          subsetNotInPlaylist = subsetNotInPlaylist.concat(item);
+        });
+        subsetNotInPlaylist.map(function(item) {
+          var index = candidateTrackIds.indexOf(item.track.id);
+          if (index > -1) {
+            candidateTrackIds.splice(index, 1);
+          }
+        });
+        if (tracksToAdd.length > 0) {
+          for (var i in tracksToAdd) {
+            tracksToAdd[i] = 'spotify:track:' + tracksToAdd[i];
+          }
+        }
+      })
+    })
+}
 
-// function checkAndAddTracks(userId, playlistId) {
-//   spotifyApi.getPlaylist(userId, playlistId)
-//   .then(function(data) {
-//
-//     var list = [];
-//     data.body.tracks.items.map(function(item) {
-//       if (item.track) {
-//         list.push(item.track.id);
-//       }
-//     });
-//     return list;
-//   }).then(function(list) {
-//     var items = list;
-//       //console.log(items);
-//       spotifyApi.containsMySavedTracks(list)
-//       .then(function(data) {
-//       // An array is returned, where the first element corresponds to the first track ID in the query
-//       var tracksToAdd = []
-//       for (var i in data.body) {
-//         if (data.body[i]) {
-//           tracksToAdd.push(items[i]);
-//         }
-//       }
-//       return tracksToAdd;
-//   }).then(function(tracksToAdd) {
-//       //filter out tracks already in playlist; use pagination on results
-//       var botTracks = [];
-//       spotifyApi.getPlaylistTracks(spotify_ids.user.me, spotify_ids.playlist.botdiscover, {limit: 100, offset: 0})
-//       .then(function(data){
-//         //console.log(data.body);
-//         botTracks = botTracks.concat(data.body.items);
-//         var promises = [];
-//         var calls = Math.ceil(data.body.total / 100);
-//         for (var i = 1; i < calls; i++) {
-//           var promise = new Promise((resolve, reject) => {
-//             spotifyApi.getPlaylistTracks(spotify_ids.user.me, spotify_ids.playlist.botdiscover, {limit: 100, offset: i * 100})
-//             .then(function(data){
-//               resolve(data.body.items);
-//             });
-//           });
-//           promises.push(promise);
-//         } Promise.all(promises).then(values => {
-//           values.forEach(function(item) {
-//             botTracks = botTracks.concat(item);
-//           });
-//           //all tracks are here now
-//           botTracks.map(function(item) {
-//             var index = tracksToAdd.indexOf(item.track.id);
-//             if (index > -1) {
-//               tracksToAdd.splice(index, 1);
-//             }
-//           });
-//           if (tracksToAdd.length > 0) {
-//             for (var i in tracksToAdd) {
-//               tracksToAdd[i] = 'spotify:track:' + tracksToAdd[i];
-//             }
-//             addTracksToPlaylist(spotify_ids.playlist.botdiscover, tracksToAdd);
-//           }
-//         }, reason => {
-//           console.log('FAILED', reason);
-//         });
-//       });
-//   });
-// }).catch(function(err) {
-//   console.log('Spotify API error on playlist ' + playlistId, err);
-// });
-// }
 
-module.exports = { getAuthUrl, exchangeAccessCodeForTokens, refreshAccessToken, getPlaylistIds, createAggregatePlaylist }
+function addTracksToPlaylist(access_token, userId, playlistId, playlistTrackIds) {
+  spotifyApi.setAccessToken(access_token)
+  return spotifyApi.addTracksToPlaylist(userId, playlistId, playlistTrackIds)
+}
+
+module.exports = { getAuthUrl, exchangeAccessCodeForTokens, refreshAccessToken, getPlaylistIds, createAggregatePlaylist, getPlaylistTrackIds, subsetOfMySavedTracks, subsetOfPlaylistId, addTracksToPlaylist }
