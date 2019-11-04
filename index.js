@@ -97,10 +97,10 @@ function updatePlaylist() {
           .then(newTracksToAdd => {
             if (newTracksToAdd.length > 0) {
               console.log(`adding ${newTracksToAdd.length} song(s) to playlist for ${userId}`)
-              // spotifyClient.addTracksToPlaylist(access_token, releaseDiscovery, newTracksToAdd)
-              //   .then(d => {
-              //     console.log(`User ${userId}'s playlist was updated. Snapshot id: ${d.body.snapshot_id}`)
-              //   })
+              spotifyClient.addTracksToPlaylist(access_token, releaseDiscovery, newTracksToAdd)
+                .then(d => {
+                  console.log(`User ${userId}'s playlist was updated. Snapshot id: ${d.body.snapshot_id}`)
+                })
             } else {
               console.log(`all songs already added, no more tracks to add for ${userId}`)
             }
@@ -116,12 +116,15 @@ function createPlaylist(info) {
         if (playlists.releaseDiscovery) {
           resolve(playlists);
         } else {
-          return spotifyClient.createAggregatePlaylist(data.userId, data.accessToken, playlists)
+          spotifyClient.createAggregatePlaylist(info.userId, info.access_token, playlists)
+            .then(updatedPlaylists => {
+              resolve(updatedPlaylists)
+            })
         }
-    })
-    .catch(e => {
-      console.log(e)
-    })
+      })
+      .catch(e => {
+        console.log(e)
+      })
   })
 }
 

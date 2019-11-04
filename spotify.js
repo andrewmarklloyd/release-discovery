@@ -113,8 +113,9 @@ function createAggregatePlaylist(userId, access_token, playlists) {
   spotifyApi.setAccessToken(access_token);
   return new Promise((resolve, reject) => {
     spotifyApi.createPlaylist(userId, 'Release Discovery', { 'public' : false })
-      .then(id => {
-        playlists.releaseDiscovery = id;
+      .then(result => {
+        console.log(`Created playlist ${result.body.id} for ${userId}`)
+        playlists.releaseDiscovery = result.body.id
         resolve(playlists)
       })
   })
