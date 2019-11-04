@@ -22,8 +22,8 @@ function startServer() {
     spotifyClient.exchangeAccessCodeForTokens(req.query.code)
       .then(result => {
         createPlaylist(result.body)
-          .then(playlistId => {
-            result.body.playlistId = playlistId
+          .then(playlists => {
+            result.body.playlists = playlists
             herokuClient.updateConfigVars(result.body.userId, JSON.stringify(result.body))
             res.redirect('/home');
           })
@@ -70,24 +70,36 @@ function updatePlaylist() {
       let userInfo = JSON.parse(data)
       let access_token = userInfo.access_token
       let userId = userInfo.userId
-      let playlistId = userInfo.playlistId
+      let releaseDiscovery = userInfo.playlists.releaseDiscovery
+      let releaseRadar = userInfo.playlists.releaseRadar
+      let spotifydiscover = userInfo.playlists.spotifydiscover
+      let savedTracks = []
 
-      spotifyClient.getPlaylistTrackIds(access_token, userId, playlistId)
-        .then(releaseDiscoveryTrackIds => {
-          console.log('track ids length:', releaseDiscoveryTrackIds.length)
-          // error returned is too many tracks
-          return spotifyClient.subsetOfMySavedTracks(access_token, releaseDiscoveryTrackIds)
+      spotifyClient.getPlaylistTrackIds(access_token, userId, releaseRadar)
+        .then(releaseRadarTrackIds => {
+          return spotifyClient.subsetOfMySavedTracks(access_token, releaseRadarTrackIds)
         })
-        .then(subsetOfMySavedTracks => {
-          console.log(subsetOfMySavedTracks.length)
-          // return spotifyClient.subsetOfPlaylistId(access_token, userId, subsetOfMySavedTracks, playlistId)
+        .then(releaseRadarSavedTracks => {
+          Array.prototype.push.apply(savedTracks, releaseRadarSavedTracks);
+          return spotifyClient.getPlaylistTrackIds(access_token, userId, spotifydiscover)
         })
-        // .catch(err => {
-        //   console.log('err', err)
-        // })
-        // .then(newTracksToAdd => {
-        //   spotifyApi.addTracksToPlaylist(access_token)
-        // })
+        .then(spotifydiscoverTrackIds => {
+          return spotifyClient.subsetOfMySavedTracks(access_token, spotifydiscoverTrackIds)
+        })
+        .then(spotifydiscoverSavedTracks => {
+          Array.prototype.push.apply(savedTracks, spotifydiscoverSavedTracks);
+          return spotifyClient.subsetOfPlaylistId(access_token, userId, savedTracks, releaseDiscovery)
+        })
+        .then(newTracksToAdd => {
+          if (newTracksToAdd.length > 0) {
+            spotifyClient.addTracksToPlaylist(access_token, releaseDiscovery, newTracksToAdd)
+              .then(d => {
+                console.log(d)
+              })
+          } else {
+            console.log('no tracks to add')
+          }
+        })
     })
   // herokuClient.getAllConfigVars()
   //   .then(data => {
@@ -101,16 +113,16 @@ function updatePlaylist() {
 
 function createPlaylist(info) {
   return new Promise((resolve, reject) => {
-    spotifyClient.getPlaylistIds(info.userId, info.access_token, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        if (data.releaseDiscovery) {
-          resolve(data.releaseDiscovery);
+    spotifyClient.getPlaylistIds(info.access_token)
+      .then(playlists => {
+        if (playlists.releaseDiscovery) {
+          resolve(playlists);
         } else {
-          return spotifyClient.createAggregatePlaylist(data.userId, data.accessToken)
+          return spotifyClient.createAggregatePlaylist(data.userId, data.accessToken, playlists)
         }
-      }
+    })
+    .catch(e => {
+      console.log(e)
     })
   })
 }
