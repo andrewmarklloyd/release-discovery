@@ -102,34 +102,62 @@ function createAggregatePlaylist(userId, access_token) {
 }
 
 // given access_token, userId, and playlistId, returns list of trackIds for the given playlistId
-function getPlaylistTrackIds(access_token, userId, playlistId) {
+function getPlaylistTrackIds(access_token, userId, playlistId, callback) {
   spotifyApi.setAccessToken(access_token)
-  return spotifyApi.getPlaylist(playlistId)
+  let list = []
+  return spotifyApi.getPlaylistTracks(playlistId)
   .then(function(data) {
-    let list = []
-    data.body.tracks.items.map(function(item) {
+    data.body.items.map(function(item) {
       if (item.track) {
         list.push(item.track.id)
       }
     })
-    return Promise.resolve(list);
+    let promiseList = []
+    for (var i = 1; i < (Math.ceil(data.body.total / 100)); i++) {
+      offset = i * 100
+      promiseList.push(spotifyApi.getPlaylistTracks(playlistId, {offset}))
+    }
+    return Promise.all(promiseList).then(results=> {
+      results.forEach(result => {
+        result.body.items.map(function(item) {
+          if (item.track) {
+            list.push(item.track.id)
+          }
+        })
+      })
+      return Promise.resolve(list);
+    })
   })
 }
 
 // given access_token and listOfTrackIds, returns a subset of tracks contained in my saved tracks
 function subsetOfMySavedTracks(access_token, listOfTrackIds) {
   spotifyApi.setAccessToken(access_token)
-  var items = list;
-  return spotifyApi.containsMySavedTracks(list)
-    .then(data => {
-      let subsetInMyTracks = []
-      for (var i in data.body) {
-        if (data.body[i]) {
-          subsetInMyTracks.push(items[i])
+  let calls = Math.ceil(listOfTrackIds.length / 50)
+  let promiseList = []
+  for (var i = 0; i < calls; i++) {
+    begin = i * 50
+    end = begin + 50
+    let sliceList = listOfTrackIds.slice(begin, end)
+    promise = new Promise((resolve, reject) => {
+      spotifyApi.containsMySavedTracks(sliceList)
+        .then(containsTracks => {
+          resolve({containsTracks, sliceList})
+        })
+    })
+    promiseList.push(promise)
+  }
+  let subsetInMyTracks = []
+  return Promise.all(promiseList).then(results=> {
+    results.forEach(result => {
+      for (var i in result.containsTracks.body) {
+        if (result.containsTracks.body[i]) {
+          subsetInMyTracks.push(result.sliceList[i])
         }
       }
-      return Promise.resolve(subsetInMyTracks)
     })
+    return Promise.resolve(subsetInMyTracks)
+  })
 }
 
 // given access_token, userId, candidateTrackIds, and playlistId, returns a subset of tracks that are NOT already in playlistId

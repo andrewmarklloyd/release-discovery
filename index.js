@@ -68,20 +68,26 @@ function updatePlaylist() {
   herokuClient.getConfigVar('andrewlloyd85')
     .then(data => {
       let userInfo = JSON.parse(data)
-      let access_token = userInfo.accessToken //access_token ?
+      let access_token = userInfo.access_token
       let userId = userInfo.userId
       let playlistId = userInfo.playlistId
 
       spotifyClient.getPlaylistTrackIds(access_token, userId, playlistId)
         .then(releaseDiscoveryTrackIds => {
+          console.log('track ids length:', releaseDiscoveryTrackIds.length)
+          // error returned is too many tracks
           return spotifyClient.subsetOfMySavedTracks(access_token, releaseDiscoveryTrackIds)
         })
         .then(subsetOfMySavedTracks => {
-          return spotifyClient.subsetOfPlaylistId(access_token, userId, subsetOfMySavedTracks, playlistId)
+          console.log(subsetOfMySavedTracks.length)
+          // return spotifyClient.subsetOfPlaylistId(access_token, userId, subsetOfMySavedTracks, playlistId)
         })
-        .then(newTracksToAdd => {
-          spotifyApi.addTracksToPlaylist(access_token)
-        })
+        // .catch(err => {
+        //   console.log('err', err)
+        // })
+        // .then(newTracksToAdd => {
+        //   spotifyApi.addTracksToPlaylist(access_token)
+        // })
     })
   // herokuClient.getAllConfigVars()
   //   .then(data => {
