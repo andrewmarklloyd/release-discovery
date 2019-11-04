@@ -65,50 +65,48 @@ function refreshAllTokens() {
 }
 
 function updatePlaylist() {
-  herokuClient.getConfigVar('andrewlloyd85')
+  herokuClient.getAllConfigVars()
     .then(data => {
-      let userInfo = JSON.parse(data)
-      let access_token = userInfo.access_token
-      let userId = userInfo.userId
-      let releaseDiscovery = userInfo.playlists.releaseDiscovery
-      let releaseRadar = userInfo.playlists.releaseRadar
-      let spotifydiscover = userInfo.playlists.spotifydiscover
-      let savedTracks = []
-
-      spotifyClient.getPlaylistTrackIds(access_token, userId, releaseRadar)
-        .then(releaseRadarTrackIds => {
-          return spotifyClient.subsetOfMySavedTracks(access_token, releaseRadarTrackIds)
-        })
-        .then(releaseRadarSavedTracks => {
-          Array.prototype.push.apply(savedTracks, releaseRadarSavedTracks);
-          return spotifyClient.getPlaylistTrackIds(access_token, userId, spotifydiscover)
-        })
-        .then(spotifydiscoverTrackIds => {
-          return spotifyClient.subsetOfMySavedTracks(access_token, spotifydiscoverTrackIds)
-        })
-        .then(spotifydiscoverSavedTracks => {
-          Array.prototype.push.apply(savedTracks, spotifydiscoverSavedTracks);
-          return spotifyClient.subsetOfPlaylistId(access_token, userId, savedTracks, releaseDiscovery)
-        })
-        .then(newTracksToAdd => {
-          if (newTracksToAdd.length > 0) {
-            spotifyClient.addTracksToPlaylist(access_token, releaseDiscovery, newTracksToAdd)
-              .then(d => {
-                console.log(d)
-              })
-          } else {
-            console.log('no tracks to add')
-          }
-        })
+      const keys = Object.keys(data)
+      keys.forEach(k => {
+        let userInfo = JSON.parse(data[k])
+        let access_token = userInfo.access_token
+        let userId = userInfo.userId
+        let releaseDiscovery = userInfo.playlists.releaseDiscovery
+        let releaseRadar = userInfo.playlists.releaseRadar
+        let spotifydiscover = userInfo.playlists.spotifydiscover
+        let savedTracks = []
+        console.log(`Running script for user ${userId}`)
+        spotifyClient.getPlaylistTrackIds(access_token, userId, releaseRadar)
+          .then(releaseRadarTrackIds => {
+            return spotifyClient.subsetOfMySavedTracks(access_token, releaseRadarTrackIds)
+          })
+          .then(releaseRadarSavedTracks => {
+            console.log(`${userId} releaseRadarSavedTracks: ${releaseRadarSavedTracks.length}`)
+            Array.prototype.push.apply(savedTracks, releaseRadarSavedTracks)
+            return spotifyClient.getPlaylistTrackIds(access_token, userId, spotifydiscover)
+          })
+          .then(spotifydiscoverTrackIds => {
+            return spotifyClient.subsetOfMySavedTracks(access_token, spotifydiscoverTrackIds)
+          })
+          .then(spotifydiscoverSavedTracks => {
+            console.log(`${userId} spotifydiscoverSavedTracks: ${spotifydiscoverSavedTracks.length}`)
+            Array.prototype.push.apply(savedTracks, spotifydiscoverSavedTracks);
+            return spotifyClient.subsetOfPlaylistId(access_token, userId, savedTracks, releaseDiscovery)
+          })
+          .then(newTracksToAdd => {
+            if (newTracksToAdd.length > 0) {
+              console.log(`adding ${newTracksToAdd.length} song(s) to playlist for ${userId}`)
+              // spotifyClient.addTracksToPlaylist(access_token, releaseDiscovery, newTracksToAdd)
+              //   .then(d => {
+              //     console.log(`User ${userId}'s playlist was updated. Snapshot id: ${d.body.snapshot_id}`)
+              //   })
+            } else {
+              console.log(`all songs already added, no more tracks to add for ${userId}`)
+            }
+          })
+      })
     })
-  // herokuClient.getAllConfigVars()
-  //   .then(data => {
-  //     const keys = Object.keys(data)
-  //     keys.forEach(k => {
-  //       let info = JSON.parse(data[k])
-  //       console.log(info.playlistId)
-  //     })
-  //   })
 }
 
 function createPlaylist(info) {
