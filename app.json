@@ -1,0 +1,29 @@
+{
+  "name": "release-discovery",
+  "scripts": {
+  },
+  "env": {
+    "HEROKU_API_TOKEN": {
+      "required": true
+    },
+    "SPOTIFY_CLIENT_ID": {
+      "required": true
+    },
+    "SPOTIFY_CLIENT_SECRET": {
+      "required": true
+    },
+    "SPOTIFY_REDIRECT_URI": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "addons": [
+
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}

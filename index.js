@@ -4,15 +4,14 @@ const express = require('express');
 const herokuClient = require('./heroku');
 const spotifyClient = require('./spotify');
 
+
 function startServer() {
   const app = express();
 
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  app.get('/', (req, res) => {
-    res.send('<h1>Click below to register</h1><form action="/register"><input type="submit" value="Register"/></form>')
-  });
+  app.use('/', express.static('public'))
 
   app.get('/register', (req, res) => {
     res.redirect(spotifyClient.getAuthUrl('register'))
