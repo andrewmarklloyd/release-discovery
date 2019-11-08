@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js server",
-    "deploy": "git push heroku master"
+    "refresh": "node index.js refresh",
+    "playlist": "node index.js playlist"
   },
   "author": "",
   "license": "ISC",
