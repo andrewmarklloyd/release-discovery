@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js server",
+    "dev": "nodemon index.js server",
+    "playlist": "node index.js playlist",
     "refresh": "node index.js refresh",
-    "playlist": "node index.js playlist"
+    "start": "node index.js server"
   },
   "author": "",
   "license": "ISC",

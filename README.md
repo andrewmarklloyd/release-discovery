@@ -15,6 +15,9 @@ nvm use v8.12.0
 # install dependencies
 npm install
 
+# run the web server with hot reload
+npm run dev
+
 # run the web server
 npm start
 
