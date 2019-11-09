@@ -11,6 +11,10 @@ function startServer() {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  app.get('/test', (req, res) => {
+    res.send('<h1>Testing!</h1>')
+  });
+
   app.use('/', express.static('public'))
 
   app.get('/register', (req, res) => {
