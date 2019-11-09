@@ -3,3 +3,5 @@ node_modules
 test.sh
 token.json
 credentials.json
+public/*
+!.keep
