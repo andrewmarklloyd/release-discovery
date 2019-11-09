@@ -1,9 +1,10 @@
 {
-  "name": "fitbit",
+  "name": "release-discovery",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "node build.js",
     "dev": "nodemon index.js server",
     "playlist": "node index.js playlist",
     "refresh": "node index.js refresh",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "concurrently": "^3.5.1",
+    "mustache": "^3.1.0",
     "nodemon": "^1.15.1"
   }
 }
