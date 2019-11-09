@@ -1,12 +1,13 @@
 const Heroku = require('heroku-client')
-const heroku = new Heroku({ token: process.env.HEROKU_API_TOKEN })
+const config = require('./config');
+const heroku = new Heroku({ token: config.heroku.apiToken })
 
 
 function updateConfigVars(key, value) {
   return new Promise((resolve, reject) => {
     var body = {}
     body[key] = value
-    heroku.patch(`/apps/spotify-config/config-vars`, {body})
+    heroku.patch(`/apps/${config.heroku.configApp}/config-vars`, {body})
     .then(result => {
       resolve();
     })
@@ -19,7 +20,7 @@ function updateConfigVars(key, value) {
 
 function getConfigVar(key) {
   return new Promise((resolve, reject) => {
-    heroku.get(`/apps/spotify-config/config-vars`)
+    heroku.get(`/apps/${config.heroku.configApp}/config-vars`)
     .then(result => {
       resolve(result[key]);
     })
@@ -31,7 +32,7 @@ function getConfigVar(key) {
 
 function getAllConfigVars() {
   return new Promise((resolve, reject) => {
-    heroku.get(`/apps/spotify-config/config-vars`)
+    heroku.get(`/apps/${config.heroku.configApp}/config-vars`)
     .then(result => {
       resolve(result);
     })
