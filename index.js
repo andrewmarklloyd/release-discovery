@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const herokuClient = require('./heroku');
 const spotifyClient = require('./spotify');
+var path = require('path');
 
 
 function startServer() {
@@ -42,7 +43,7 @@ function startServer() {
   });
 
   app.get('/home', (req, res) => {
-    res.send("<h1>You've successfully registered!</h1>")
+    res.sendFile(path.join(__dirname + '/public/home.html'));
   });
 
   app.listen(process.env.PORT, () => {
