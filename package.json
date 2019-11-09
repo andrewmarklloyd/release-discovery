@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.js",
-    "dev": "nodemon index.js server",
+    "dev": "nodemon --exec 'node build.js && node index.js server'",
     "playlist": "node index.js playlist",
     "refresh": "node index.js refresh",
     "start": "node index.js server"

@@ -15,6 +15,9 @@ nvm use v8.12.0
 # install dependencies
 npm install
 
+# use example .env file
+cp .env.example .env
+
 # run the web server with hot reload
 npm run dev
 
