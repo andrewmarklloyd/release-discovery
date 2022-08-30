@@ -19,7 +19,7 @@
     "fitbit-node": "^2.2.0",
     "googleapis": "^43.0.0",
     "heroku-client": "^3.0.7",
-    "moment-timezone": "^0.5.26",
+    "moment-timezone": "^0.5.35",
     "spotify-web-api-node": "^4.0.0"
   },
   "devDependencies": {
